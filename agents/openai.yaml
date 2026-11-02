@@ -1,0 +1,4 @@
+interface:
+  display_name: "多会话协作"
+  short_description: "用自然语言启动或接续多会话协作，由主控组织交接、复核并汇总结果"
+  default_prompt: "使用 $team-chat 完成下面的任务；可按需新建独立 chat，并允许本任务的 chat 互相交流及向主控回报，由当前 chat 验收汇总："
