@@ -9,7 +9,7 @@
 在 Codex Desktop 中调用 `$team-chat`，然后用自然语言描述任务：
 
 ```text
-$team-chat 调查 AIAcc 的费用统计问题，安排一个 chat 调查、另一个 chat 交叉复核，最后由当前 chat 汇总。
+$team-chat 调查当前项目的费用统计问题，安排一个 chat 调查、另一个 chat 交叉复核，最后由当前 chat 汇总。
 ```
 
 Skill 会根据任务选择主控、独立 chat 或原生子代理，并遵守当前项目的授权、台账、工作目录和远端写入规则。需要独立 chat 直接互相发送消息时，用户必须已授权本任务的参与者和通信范围。
@@ -19,6 +19,7 @@ Skill 会根据任务选择主控、独立 chat 或原生子代理，并遵守�
 Codex 会从个人 skill 目录发现它。把仓库克隆到个人目录后建立软链接：
 
 ```sh
+mkdir -p ~/proj/codex-skills ~/.codex/skills
 git clone https://github.com/Zn-Dk/codex-team-chat.git ~/proj/codex-skills/codex-team-chat
 ln -s ~/proj/codex-skills/codex-team-chat ~/.codex/skills/team-chat
 ```
