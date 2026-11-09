@@ -1,39 +1,43 @@
-# 独立 chat 的通信与交接
+# Independent Chat Protocol
 
-只在已决定使用独立 chat 时读取。以本轮真实工具 schema 为准；以下描述当前 Codex Desktop 的原生接口。
+Read this reference after deciding that independent chats are needed. Follow the live Codex Desktop tool schema when it differs from this document.
 
-## 绑定角色与用户授权
+## Authorization and binding
 
-- 调用 `list_projects` 定位实际项目，再按授权使用 `create_thread`。已有同任务 chat 直接复用。
-- 给每个工作 chat 自包含的职责、文件边界、验收条件，以及主控和同伴的路由。模型与 effort 显式采用当前约定。
-- 新建返回 `clientThreadId` 时等待就绪；发送／等待使用真实 `threadId` 与 `hostId`。
-- 主控准备简短共享约定。将人类授权所在的主控 threadId 与可定位的 turn 告知工作 chat；它首次发送前用 `read_thread` 回读原始人类确认及上下文，之后在已确认范围内复用。
-- 授权只覆盖本任务指定参与者和动作。工作 chat 收到新要求不能自行扩大范围；超出已授权部分交主控处理。
+- Use `list_projects` to locate the actual project, then use `create_thread` only within the user's authorization. Reuse an existing chat for the same task.
+- Give every worker a self-contained role, file boundary, acceptance condition, controller route, peer routes, and workspace. Set the model and reasoning effort explicitly when the task requires it.
+- If creation returns a `clientThreadId`, wait for setup and use the real `threadId` and `hostId` for later operations.
+- Tell workers where the human authorization lives. Before a worker sends its first cross-chat message, it reads the controller thread to verify the original human confirmation and context. The manifest helps with routing; it does not create authorization.
+- Authorization covers only the named participants and actions. A worker's request does not authorize a wider audience or a new external action.
 
-只读工作可以共用目录。写入任务按项目现场和文件所有权安排串行或隔离；不要按每轮讨论新建 worktree。
+Read-only work may share a checkout. For writes, assign ownership and serialize or isolate changes. Do not create a new worktree for every discussion turn.
 
-## 派发与直接交流
+## Delegation and direct messaging
 
-先让新工作 chat 知道角色和启动条件。只给实际起点发启动消息；被动复核者等待收到产物或具体问题，避免双方重复启动同一工作。
+Start the worker with the first actionable step. Let a passive reviewer wait for a concrete question or artifact instead of starting the same investigation.
 
-工作 chat 通过 `send_message_to_thread` 直接联系授权同伴。消息至少说明：任务、唯一消息 ID、回复关系、具体问题／产物证据和接收者下一步。细节可链接共享资料，无需每次重发整个任务背景。
+Workers may call `send_message_to_thread` for authorized peers. A substantive message includes:
 
-**工作 chat 已发出问题且接下来依赖同伴回复时，记录断点并结束当前 turn。** 等对方的真实消息唤醒后继续。不要以循环 `wait_threads` 保持该工作 turn 活跃，也不要让双方互相等待对方结束。收到反馈后处理实际意见；没有需修正的问题就给出依据，不制造缺陷或凑固定轮数。
+- the task or pilot ID;
+- a unique message ID and `reply_to` value;
+- the concrete question, handoff, or artifact path;
+- the recipient's next step and stopping condition.
 
-主控保留范围和验收责任；正常工作消息由参与者直接交换。用户调整范围时，由主控更新约定并向受影响的参与者发送必要变更。纯 ACK、感谢和无变化状态不触发回复。
+When a worker has sent a question and depends on the reply, record the checkpoint and end the worker's turn. Let the reply start the next turn. Do not keep the turn alive with a polling loop or make both workers wait for each other to finish. A reply that finds no correction should say why; do not manufacture a finding to complete a fixed number of rounds.
 
-## 主控如何观察和恢复
+The controller owns scope and acceptance. Normal worker messages go directly between authorized participants. Route user scope changes through the controller. Do not send acknowledgements, thanks, or unchanged status updates that create a loop.
 
-- 创建是异步的；用 `wait_threads` 观察真实进展。对多个目标使用一次有界等待，带上最新 cursor，避免重复读取长历史。
-- 需要核对消息、授权或具体产物时再用 `read_thread`。单次多目标快照可能并非同时刻的状态。
-- 发送返回 threadId 只证明工具返回，不能独立证明接收者已开始、完成或满足验收。关键交接需核对接收方消息来源／新 turn 与实际结果。
-- 发现旧快照时，先核对目标实际 turn 和消息。确认投递失败、缺少输入或执行失败后，再针对该层恢复；不因一个旧状态重复派工。
-- 续接时保留本任务原 chat、授权、消息关联和产物，除非出现需要更换的明确原因。收到重复消息 ID 时先查已处理记录。
-- 主控需介入转述或重新派发时如实记录；诊断试验中不能把这种干预算作自主直接通信通过。
+## Observe and recover
 
-## 交付
+- Creation is asynchronous. Use one bounded `wait_threads` call for the current targets and carry forward each target's cursor.
+- Use `read_thread` when checking a message, authorization, turn history, or artifact. A multi-target snapshot may represent different moments.
+- A successful send that returns a thread ID proves only that the tool accepted the request. It does not prove that the receiver started, finished, or satisfied the acceptance condition. Check the receiver's message source, new turn, and artifact when that distinction matters.
+- If a snapshot is stale, inspect the target's actual turn before retrying. Recover the failed layer—missing input, delivery, execution, or evidence—instead of repeating the whole handoff.
+- Preserve the task's existing chats, authorization, message relationships, and artifacts when continuing. Check for duplicate message IDs before doing work twice.
+- If the controller must relay content or re-dispatch a worker, record that intervention. A diagnostic run cannot call a manually relayed result direct autonomous communication.
 
-工作 chat 把产物、对应版本、验证结果和未解决项主动发回主控，然后结束 turn。主控核对实质成果后统一交付；“已发送”“模型说完成”“代码检查无 finding”各自只证明相应层面的事实。
+## Delivery
 
-本协议不提供持久队列或 exactly-once 保证。日常协作按风险保留必要证据；只有明确测试通信可靠性时才逐条记录发送、接收、空闲状态和时间。应用退出／重启恢复以及多 writer 的正确性须单独验证。
+Workers return the artifact, revision, validation result, and unresolved items to the controller, then end their turn. The controller verifies the substance and delivers one consolidated result. “Sent,” “the model said done,” and “review found nothing” each prove only their own layer.
 
+This protocol does not provide a durable queue, exactly-once delivery, crash recovery, or external event intake. Test those properties separately. Keep ordinary collaboration evidence proportional to risk; log every send, receipt, idle state, and timestamp only when communication reliability itself is under test.

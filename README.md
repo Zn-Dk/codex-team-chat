@@ -1,22 +1,26 @@
+<p align="right">
+  <strong>English</strong> · <a href="./README.zh.md">简体中文</a>
+</p>
+
 # Codex Team Chat
 
-`team-chat` 是一个面向 Codex Desktop 的公共 skill：由当前 chat 负责目标、范围和最终验收，让多个独立 chat 在同一任务内直接交换问题、证据和交接结果。
+`team-chat` is a public skill for Codex Desktop. It turns the current chat into a controller that owns the goal, scope, authorization, and final acceptance while independent chats exchange questions, evidence, and handoffs directly.
 
-这个 skill 的设计受 DeepSeek 的 [dsh-superagent-prototype](https://github.com/deepseek-ai/dsh-superagent-prototype) 启发，尤其是“尽量减少人的注意力、持续交付有用结果”的工作方式。它是独立的 Codex skill，与 DeepSeek 或该项目没有隶属、赞助或代码合并关系。
+The design is inspired by DeepSeek's [dsh-superagent-prototype](https://github.com/deepseek-ai/dsh-superagent-prototype), especially its focus on reducing human attention cost while delivering useful results. This is an independent Codex skill and has no affiliation with DeepSeek or that project.
 
-## 使用
+## Use it
 
-在 Codex Desktop 中调用 `$team-chat`，然后用自然语言描述任务：
+Invoke `$team-chat` and describe the work in natural language:
 
 ```text
-$team-chat 调查当前项目的费用统计问题，安排一个 chat 调查、另一个 chat 交叉复核，最后由当前 chat 汇总。
+$team-chat Investigate the current project's cost reporting and have one chat cross-check the result before you summarize it.
 ```
 
-Skill 会根据任务选择主控、独立 chat 或原生子代理，并遵守当前项目的授权、台账、工作目录和远端写入规则。需要独立 chat 直接互相发送消息时，用户必须已授权本任务的参与者和通信范围。
+The skill chooses between the current chat, native subagents, and independent chats based on the task. It follows the project's authorization, task ledger, workspace, and remote-write rules. Independent chats may message one another only when the task authorization covers those participants and that communication.
 
-## 安装
+## Install
 
-Codex 会从个人 skill 目录发现它。把仓库克隆到个人目录后建立软链接：
+Clone the repository and link it into your personal Codex skills directory:
 
 ```sh
 mkdir -p ~/proj/codex-skills ~/.codex/skills
@@ -24,14 +28,20 @@ git clone https://github.com/Zn-Dk/codex-team-chat.git ~/proj/codex-skills/codex
 ln -s ~/proj/codex-skills/codex-team-chat ~/.codex/skills/team-chat
 ```
 
-如果 `~/.codex/skills/team-chat` 已存在，请先确认它不是仍在使用的本地副本，再替换成软链接。仓库内容更新后，Codex 通常会自动发现变更；没有显示时重启 Codex。
+If `~/.codex/skills/team-chat` already exists, check whether it is an active local copy before replacing it with the symlink. Codex normally discovers changes automatically; restart Codex if the updated skill does not appear.
 
-## 范围
+## Observed validation
 
-这个 skill 规定本地多会话协作的角色、授权、消息交接、等待和验收方式。它不提供 GitHub、Lark、持久消息队列、跨重启恢复或 exactly-once 投递；这些能力需要另行设计和验收。
+An initial Codex Desktop pilot used one controller plus independent investigator and reviewer chats. The chats exchanged seven substantive work messages, four messages woke a chat after its previous turn had ended, and the controller received both final reports without relaying normal worker messages by hand.
 
-协议细节见 [`references/protocol.md`](references/protocol.md)。
+Later internal sessions reused existing chats for worktree coordination, external-readiness checks, and follow-up investigations. They showed the value of reusing a task's existing context and stopping at authorization or external-state boundaries. They also showed the cost: complex coordination can require many history reads, bounded waits, and direct messages. A successful send that returns a thread ID still needs receiver-side verification.
 
-## 许可
+## Scope
 
-MIT License，见 [`LICENSE`](LICENSE)。
+This skill defines local multi-chat roles, authorization, handoff messages, waiting, recovery checks, and acceptance. It does not provide GitHub or Lark intake, a durable queue, crash recovery, or exactly-once delivery. Those capabilities need separate design and validation.
+
+Read [`references/protocol.md`](references/protocol.md) when independent chats are needed.
+
+## License
+
+MIT License. See [`LICENSE`](LICENSE).

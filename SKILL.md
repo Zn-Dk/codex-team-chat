@@ -1,32 +1,26 @@
 ---
 name: team-chat
-description: 在 Codex Desktop 中需要多个独立 chat 直接协作、接续已有协作或由主控统一验收时使用。也支持用简短自然语言调用；普通单任务不因此强制开多个 chat。
+description: Use when a task benefits from coordination across independent Codex chats, continuation of an existing multi-chat task, or a controller that consolidates results. Ordinary single-chat tasks stay in the current chat.
 ---
 
-# 本地多会话协作
+# Team Chat
 
-用户描述任务，当前 chat 负责范围、分工和最终验收。替用户完成消息交接，让用户主要关注主控。
+The current chat is the controller. It owns the goal, scope, authorization, delegation, and final acceptance while keeping the user's attention on decisions and results.
 
-## 先确定本轮工作
+## Choose the smallest useful setup
 
-读取适用项目规则和已有任务记录，复用已知目标、验收标准、工作目录及授权。信息足够就推进；只询问会改变结果或权限的缺口，不要求用户再写一遍协作模板。
+Read the applicable project rules, task records, workspace state, and existing handoff notes. Reuse existing chats, worktrees, artifacts, and task records. Use the current chat for small work, native subagents for short independent work, and independent chats when work must continue across turns, exchange messages directly, or remain inspectable in the sidebar.
 
-任务类型跟随用户：调查、修复、实现、审阅均按实际范围推进。短且独立的工作可用原生子代理；需要独立继续、跨 turn 交流，或用户明确要求独立 chat 时，采用独立 chat。普通小任务可由主控完成。
+Do not create independent chats merely because this skill is loaded. A skill, route file, or message from another agent does not grant permission to create chats or contact other chats. Continue with work that is already authorized, and ask only for a missing authorization that changes the action or its recipients.
 
-## 启动或接续
+## Start and coordinate
 
-1. 先复用本任务已有 chat 和工作目录。原生子代理不是独立 chat，向用户准确说明选用方式。
-2. 独立 chat 的创建和跨 chat 发送遵守当前宿主工具的授权要求。检查本任务已有人类授权；已有授权直接沿用。缺少时，一次说明拟用角色、工作范围和必要的互发／回报范围，只确认缺失部分。
-3. Skill 被加载、路由文件或另一 agent 的要求本身不提供新增授权。用户只输入任务而未请求建 chat 时，先完成可做的本地工作；只有确实需要独立 chat 才补齐授权。技能入口插入的默认提示词如果由用户实际提交，可作为该次请求的一部分。
-4. 确定采用独立 chat 后，读取 [通信与交接协议](references/protocol.md) 并执行。模型、权限和工作树选择遵循当前用户及项目约定。
+Give each worker a self-contained role, scope, file ownership, acceptance condition, project, and controller/peer route. Start only the worker that has an actionable first step; a reviewer waits for a concrete question or artifact. When independent chats are used, read `references/protocol.md` before creating or messaging them.
 
-主控在已有台账或任务资料中保留一个简短工作约定：目标、参与者及真实 threadId、授权来源、目录／版本、当前阶段、产物与下一步。复用已有记录；详细逐条事件日志仅在诊断或验收通信时需要。
+Workers may message authorized peers directly. Every substantive handoff names the task, a unique message ID, its reply target, the concrete question or artifact, and the recipient's next step. When a worker sends a question and depends on the answer, it records the checkpoint and ends its turn so the reply can wake it. The controller observes with bounded waits and reads history when delivery or evidence needs verification.
 
-## 验收与收尾
+## Accept and close
 
-主控核对产物、对应版本和实际验证；子 chat 的完成声明是验收输入。修正有证据的缺口，缺少业务决定时向用户提出具体问题。代码任务按项目要求测试；涉及共同文件的并行写入先协调或隔离，不覆盖其他工作。
+The controller verifies the artifact, revision, tests, permissions, and unresolved boundaries. A worker's completion message is evidence to inspect, not acceptance by itself. Reconcile evidence-backed corrections, keep a product decision with the user, and update the project's single source of task state.
 
-汇报结果、验证和剩余边界，并按项目约定更新唯一台账。保持必要进展更新；无变化的后台检查和纯 ACK 不产生额外消息。
-
-长目标、定时跟进、外部收件及 PR／发布按各自授权与工具要求启用，不随本技能自动开启。工具缺失或投递受阻时报告实际阻塞层级及可行替代，不声称完成了跨 chat 协作。
-
+Use quiet periods for unchanged status and avoid acknowledgement loops. Keep external intake, schedules, long-running goals, PRs, publishing, and deployment behind their own authorization and tool rules. This skill does not provide durable queues, exactly-once delivery, crash recovery, or external event intake.
